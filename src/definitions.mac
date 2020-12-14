@@ -1,0 +1,72 @@
+STDIN       equ     0
+STDOUT      equ     1
+EOF         equ     -1
+
+extern      stdout
+
+; Call codes
+
+SYS_read        equ     0
+SYS_write       equ     1
+SYS_open        equ     2
+SYS_close       equ     3
+SYS_fstat       equ     5
+SYS_lseek       equ     8
+SYS_exit        equ     60
+SYS_creat       equ     85
+
+S_IRUSR         equ     00400q
+S_IWUSR         equ     00200q
+S_IXUSR         equ     00100q
+
+O_RDONLY        equ     0
+O_WRONLY        equ     1
+O_RDWR          equ     2
+O_CREAT         equ     100
+
+SEEK_SET        equ     0
+SEEK_CUR        equ     1
+SEEK_END        equ     2
+
+; Macros
+
+; __seterrno
+; Sets libc's errno to the supplied value
+; Preconditions: none
+; Postconditions: errno is set; registers remain unchanged
+
+%macro  __seterrno  1
+    push    rdi
+    mov     rdi, %1
+    call    seterrno
+    pop     rdi
+%endmacro
+
+; fflush
+; Flushes stdout to console
+; Preconditions: none
+; Postconditions: stdout is flushed to console; non-callee saved registers are destroyed
+%macro  fflush    0
+    push    rdi
+    mov     rdi, [stdout]       ; FILE *fp = stdout
+    call    fflush
+    pop     rdi
+%endmacro
+
+; consumeStdin
+; Reads any remaining characters from STDIN until EOF or a newline is reached.
+; Preconditions: none
+; Postconditions: STDIN has been consumed; rax remains unchanged.
+
+%macro  consumeStdin    0
+    push    rax
+%%getNextChar:
+    call    getchar
+    cmp     rax, 10
+    je      %%done
+    cmp     rax, EOF
+    je      %%done
+    jmp     %%getNextChar
+%%done:
+    pop     rax
+%endmacro

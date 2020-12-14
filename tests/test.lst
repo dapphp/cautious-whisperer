@@ -1,0 +1,978 @@
+     1                                 %line 1+1 tests/test.asm
+     2                                 
+     3                                 
+     4                                 
+     5                                 [section .data]
+     6                                 
+     7                                 %line 12+1 tests/test.asm
+     8                                 
+     9                                 [extern printEndl2]
+    10                                 
+    11                                 
+    12                                 [extern stdout]
+    13                                 [extern free]
+    14                                 [extern malloc]
+    15                                 [extern printf]
+    16                                 [extern strcmp]
+    17                                 [extern fflush]
+    18                                 
+    19                                 
+    20                                 [extern printRAX]
+    21                                 [extern printRBX]
+    22                                 [extern printRCX]
+    23                                 [extern printRDX]
+    24                                 [extern printReg]
+    25                                 [extern printByteArray]
+    26                                 [extern printEndl]
+    27                                 
+    28                                 
+    29                                 [extern characterToNumber]
+    30                                 [extern numberToCharacter]
+    31                                 [extern _strtol]
+    32                                 [extern createPadPage]
+    33                                 [extern encryptMessageWithPad]
+    34                                 [extern decryptMessageWithPad]
+    35                                 
+    36                                 [extern RAND_bytes]
+    37                                 
+    38                                 
+    39                                 
+    40                                 
+    41                                 
+    42 00000000 54657374696E672025-    testingMsg db "Testing %s...",0
+    43 00000000 732E2E2E00         
+    44 0000000E 6F6B0A00               testOkMsg db "ok",10,0
+    45 00000012 616C6C207465737473-    allTestsOkMsg db "all tests passed!",10,0
+    46 00000012 20706173736564210A-
+    47 00000012 00                 
+    48 00000025 546573742025642066-    testFailMsg db "Test %d failed",10,0
+    49 00000025 61696C65640A00     
+    50 00000035 636861726163746572-    mCharToNum db "characterToNumber",0
+    51 00000035 546F4E756D62657200 
+    52 00000047 6E756D626572546F43-    mNumToChar db "numberToCharacter",0
+    53 00000047 686172616374657200 
+    54 00000059 6F757220737472746F-    mOurStrtol db "our strtol function",0
+    55 00000059 6C2066756E6374696F-
+    56 00000059 6E00               
+    57 0000006D 52414E445F62797465-    mRandBytes db "RAND_bytes",10,0
+    58 0000006D 730A00             
+    59 00000079 656E63727970744D65-    mEncryptMsg db "encryptMessageWithPad",0
+    60 00000079 737361676557697468-
+    61 00000079 50616400           
+    62 0000008F 646563727970744D65-    mDecryptMsg db "decryptMessageWithPad",0
+    63 0000008F 737361676557697468-
+    64 0000008F 50616400           
+    65 000000A5 637265617465506164-    mCreatePadPage db "createPadPage",0
+    66 000000A5 5061676500         
+    67 000000B3 637265617465506164-    mCreatePageED db "createPadPageEncryptAndDecrypt",0
+    68 000000B3 50616765456E637279-
+    69 000000B3 7074416E6444656372-
+    70 000000B3 79707400           
+    71 000000D2 6D616C6C6F63206661-    mMallocFailed db "malloc failed",10,0
+    72 000000D2 696C65640A00       
+    73 000000E1 656E6372797074696E-    mEncryptingMsg db "encrypting",10,0
+    74 000000E1 670A00             
+    75 000000ED 64656372797074696E-    mDecryptingMsg db "decrypting",10,0
+    76 000000ED 670A00             
+    77 000000F9 726573756C743D2573-    mResultMsg db "result=%s",10,0
+    78 000000F9 0A00               
+    79 00000104 506167653D25730A00     mPageEqualsMsg db "Page=%s",10,0
+    80 0000010D 54657374202325643A-    mDecryptTestRes db "Test #%d:",10," - Ciphertext=%s",10," - Result=%s",10," - Expect=%s",10,0
+    81 0000010D 0A202D204369706865-
+    82 0000010D 72746578743D25730A-
+    83 0000010D 202D20526573756C74-
+    84 0000010D 3D25730A202D204578-
+    85 0000010D 706563743D25730A00 
+    86 00000143 7061737300             mPassMsg db "pass",0
+    87 00000148 6661696C00             mFailMsg db "fail",0
+    88                                 
+    89 0000014D 333237363800           strtolT1 db "32768",0
+    90 00000153 0080000000000000       strtolTR1 dq 32768
+    91 0000015B 313331353938333732-    strtolT2 db "13159837203765439573",0
+    92 0000015B 303337363534333935-
+    93 0000015B 373300             
+    94 00000170 55AC68883622A1B6       strtolTR2 dq 13159837203765439573
+    95 00000178 2D3432393533303237-    strtolT3 db "-4295302729",0
+    96 00000178 323900             
+    97 00000184 B7E1FAFFFEFFFFFF       strtolTR3 dq -4295302729
+    98 0000018C 2D3439323935333032-    strtolT4 db "-49295302729",0
+    99 0000018C 37323900           
+   100 00000199 B75FC585F4FFFFFF       strtolTR4 dq -49295302729
+   101 000001A1 2B313333375C783030-    strtolT5 db "+1337\x00",0
+   102 000001A1 00                 
+   103 000001AB 3905000000000000       strtolTR5 dq 1337
+   104 000001B3 3030343200             strtolT6 db "0042",0
+   105 000001B8 2A00000000000000       strtolTR6 dq 42
+   106                                 
+   107                                 
+   108                                 
+   109 000001C0 416C616E2054757269-    testMsg1 db "Alan Turing was an English mathematician, computer scientist, logician, cryptanalyst, philosopher, and theoretical biologist",0
+   110 000001C0 6E672077617320616E-
+   111 000001C0 20456E676C69736820-
+   112 000001C0 6D617468656D617469-
+   113 000001C0 6369616E2C20636F6D-
+   114 000001C0 707574657220736369-
+   115 000001C0 656E746973742C206C-
+   116 000001C0 6F67696369616E2C20-
+   117 000001C0 6372797074616E616C-
+   118 000001C0 7973742C207068696C-
+   119 000001C0 6F736F706865722C20-
+   120 000001C0 616E64207468656F72-
+   121 000001C0 65746963616C206269-
+   122 000001C0 6F6C6F6769737400   
+   123 0000023D 687855282033465029-    testKey1 db "hxU( 3FP)-7 TA\NEmIX\oqNiL&6eHvDynDMmu12T7 _x7Pc_zAS(e:+CCvmX8P56=\YTG1-qsqlDyDnPTACTQ7+Jk._,?BnX:",0x22,";IKL3;XWG#YbJ$4,4!V!opLq3@",0
+   124 0000023D 2D372054415C4E456D-
+   125 0000023D 49585C6F714E694C26-
+   126 0000023D 3665487644796E444D-
+   127 0000023D 6D7531325437205F78-
+   128 0000023D 3750635F7A41532865-
+   129 0000023D 3A2B4343766D583850-
+   130 0000023D 35363D5C595447312D-
+   131 0000023D 7173716C4479446E50-
+   132 0000023D 5441435451372B4A6B-
+   133 0000023D 2E5F2C3F426E583A22-
+   134 0000023D 3B494B4C333B585747-
+   135 0000023D 2359624A24342C3421-
+   136 0000023D 56216F704C71334000 
+   137 000002BB 393735313130383030-    testCT1 db "97511080006915227685880031903444944339892938441144070693221646975431121032467690622361315397253921603126693089831100574966241594879518220909291336535843124206311533081162479777073987358503983530380286110441979317261366332701638912806825704639085297",0
+   138 000002BB 303639313532323736-
+   139 000002BB 383538383030333139-
+   140 000002BB 303334343439343433-
+   141 000002BB 333938393239333834-
+   142 000002BB 343131343430373036-
+   143 000002BB 393332323136343639-
+   144 000002BB 373534333131323130-
+   145 000002BB 333234363736393036-
+   146 000002BB 323233363133313533-
+   147 000002BB 393732353339323136-
+   148 000002BB 303331323636393330-
+   149 000002BB 383938333131303035-
+   150 000002BB 373439363632343135-
+   151 000002BB 393438373935313832-
+   152 000002BB 323039303932393133-
+   153 000002BB 333635333538343331-
+   154 000002BB 323432303633313135-
+   155 000002BB 333330383131363234-
+   156 000002BB 373937373730373339-
+   157 000002BB 383733353835303339-
+   158 000002BB 383335333033383032-
+   159 000002BB 383631313034343139-
+   160 000002BB 373933313732363133-
+   161 000002BB 363633333237303136-
+   162 000002BB 333839313238303638-
+   163 000002BB 323537303436333930-
+   164 000002BB 383532393700       
+   165                                 
+   166 000003B4 4C652422692637382A-    testMsg2 db "Le$",0x22,"i&78*5F_cnT,3HQa17KAmAgox6CYz!.+#:'ph,lqt+(Z?",0x22,"bYt0BR$Jm6g0jPCs)O9M:ON%kh1z_#?Iqd@)FLZU==jX!EES.- w2oIPf4;y UXGv9&@3H(TkM5",0
+   167 000003B4 35465F636E542C3348-
+   168 000003B4 516131374B416D4167-
+   169 000003B4 6F783643597A212E2B-
+   170 000003B4 233A2770682C6C7174-
+   171 000003B4 2B285A3F2262597430-
+   172 000003B4 4252244A6D3667306A-
+   173 000003B4 504373294F394D3A4F-
+   174 000003B4 4E256B68317A5F233F-
+   175 000003B4 4971644029464C5A55-
+   176 000003B4 3D3D6A58214545532E-
+   177 000003B4 2D2077326F49506634-
+   178 000003B4 3B7920555847763926-
+   179 000003B4 40334828546B4D3500 
+   180 00000432 262C286E2D34643975-    testKey2 db "&,(n-4d9u7VS3z=neTuX@3wpH=jB(L,k#i'V=V4D6P3Tr o3t4'_$a6Z6ary 'F7?JL\7-p@7IuMP*",0x22,"A&// +$PVtJh,Pr6u9cna8qXjA-u6Lh-05DeIqk25Md'Cb",0
+   181 00000432 375653337A3D6E6554-
+   182 00000432 755840337770483D6A-
+   183 00000432 42284C2C6B23692756-
+   184 00000432 3D5634443650335472-
+   185 00000432 206F337434275F2461-
+   186 00000432 365A36617279202746-
+   187 00000432 373F4A4C5C372D7040-
+   188 00000432 3749754D502A224126-
+   189 00000432 2F2F202B245056744A-
+   190 00000432 682C5072367539636E-
+   191 00000432 613871586A412D7536-
+   192 00000432 4C682D303544654971-
+   193 00000432 6B32354D6427436200 
+   194 000004B0 343737353132373438-    testCT2 db "4775127480268549894488078056788482882613474223050959330590634525876821633178270888588825541181750722671382755404269947056523046962175002485600756744490963946034355490624113829334919440143023146010867224567241705943426849136775714364810037595112777681",0
+   195 000004B0 303236383534393839-
+   196 000004B0 343438383037383035-
+   197 000004B0 363738383438323838-
+   198 000004B0 323631333437343232-
+   199 000004B0 333035303935393333-
+   200 000004B0 303539303633343532-
+   201 000004B0 353837363832313633-
+   202 000004B0 333137383237303838-
+   203 000004B0 383538383832353534-
+   204 000004B0 313138313735303732-
+   205 000004B0 323637313338323735-
+   206 000004B0 353430343236393934-
+   207 000004B0 373035363532333034-
+   208 000004B0 363936323137353030-
+   209 000004B0 323438353630303735-
+   210 000004B0 363734343439303936-
+   211 000004B0 333934363033343335-
+   212 000004B0 353439303632343131-
+   213 000004B0 333832393333343931-
+   214 000004B0 393434303134333032-
+   215 000004B0 333134363031303836-
+   216 000004B0 373232343536373234-
+   217 000004B0 313730353934333432-
+   218 000004B0 363834393133363737-
+   219 000004B0 353731343336343831-
+   220 000004B0 303033373539353131-
+   221 000004B0 3237373736383100   
+   222                                 
+   223 000005AB 4F6E652D74696D6520-    testMsg3 db "One-time pads are used for encoding and decoding messages. Such correspondence is resistant to disclosure. TOP SECRET//NOFORN",0
+   224 000005AB 706164732061726520-
+   225 000005AB 7573656420666F7220-
+   226 000005AB 656E636F64696E6720-
+   227 000005AB 616E64206465636F64-
+   228 000005AB 696E67206D65737361-
+   229 000005AB 6765732E2053756368-
+   230 000005AB 20636F72726573706F-
+   231 000005AB 6E64656E6365206973-
+   232 000005AB 20726573697374616E-
+   233 000005AB 7420746F2064697363-
+   234 000005AB 6C6F737572652E2054-
+   235 000005AB 4F5020534543524554-
+   236 000005AB 2F2F4E4F464F524E00 
+   237 00000629 7A39704C5F4B375F4C-    testKey3 db "z9pL_K7_L'lE10A5OtDF0ge(,&bvG61Kcp lK&cSMXD1QZ6eL_yMF)h 1XlfOyB.nF3N7I2jbXj8pJ0",0x22,"G=LrN%!bsJUk6Vcn@3&LUG,79f-#DZLH=56R",0x22,"CIueY",0x22,"Ri",0
+   238 00000629 276C45313041354F74-
+   239 00000629 4446306765282C2662-
+   240 00000629 764736314B6370206C-
+   241 00000629 4B2663534D58443151-
+   242 00000629 5A36654C5F794D4629-
+   243 00000629 682031586C664F7942-
+   244 00000629 2E6E46334E3749326A-
+   245 00000629 62586A38704A302247-
+   246 00000629 3D4C724E252162734A-
+   247 00000629 556B3656636E403326-
+   248 00000629 4C55472C3739662D23-
+   249 00000629 445A4C483D35365222-
+   250 00000629 434975655922526900 
+   251 000006A7 323939373337353433-    testCT3 db "2997375436099421418128979416909708781313792763728582604309839004284665690178234905179590092394284129462013683163946869132444981433099520861692413216319635031669142817392172783836122970002561349796671024149199887813537902418763547083524854230891479611",0
+   252 000006A7 363039393432313431-
+   253 000006A7 383132383937393431-
+   254 000006A7 363930393730383738-
+   255 000006A7 313331333739323736-
+   256 000006A7 333732383538323630-
+   257 000006A7 343330393833393030-
+   258 000006A7 343238343636353639-
+   259 000006A7 303137383233343930-
+   260 000006A7 353137393539303039-
+   261 000006A7 323339343238343132-
+   262 000006A7 393436323031333638-
+   263 000006A7 333136333934363836-
+   264 000006A7 393133323434343938-
+   265 000006A7 313433333039393532-
+   266 000006A7 303836313639323431-
+   267 000006A7 333231363331393633-
+   268 000006A7 353033313636393134-
+   269 000006A7 323831373339323137-
+   270 000006A7 323738333833363132-
+   271 000006A7 323937303030323536-
+   272 000006A7 313334393739363637-
+   273 000006A7 313032343134393139-
+   274 000006A7 393838373831333533-
+   275 000006A7 373930323431383736-
+   276 000006A7 333534373038333532-
+   277 000006A7 343835343233303839-
+   278 000006A7 3134373936313100   
+   279                                 
+   280                                 
+   281                                 
+   282                                 [section .bss]
+   283                                 
+   284                                 
+   285                                 
+   286                                 
+   287                                 [section .text]
+   288                                 
+   289                                 
+   290                                 [global _testCharacterToNumber]
+   291                                 _testCharacterToNumber:
+   292                                 
+   293 00000000 49C7C401000000          mov r12, 1
+   294 00000007 48C7C7[00000000]        mov rdi, testingMsg
+   295 0000000E 48C7C6[00000000]        mov rsi, mCharToNum
+   296 00000015 4831C0                  xor rax, rax
+   297 00000018 E8(F6FFFFFF)            call printf
+   298                                 
+   299                                 .tctn1:
+   300 0000001D 48C7C720000000          mov rdi, 0x20
+   301 00000024 E8(F6FFFFFF)            call characterToNumber
+   302 00000029 4883F800                cmp rax, 0
+   303 0000002D 741C                    je .tctn2
+   304 0000002F 48C7C7[00000000]        mov rdi, testFailMsg
+   305 00000036 4C89E6                  mov rsi, r12
+   306 00000039 4831C0                  xor rax, rax
+   307 0000003C E8(F6FFFFFF)            call printf
+   308 00000041 48C7C701000000          mov rdi, 1
+   309 00000048 E88F080000              call _exit
+   310                                 
+   311                                 .tctn2:
+   312 0000004D 49FFC4                  inc r12
+   313 00000050 48C7C765000000          mov rdi, 0x65
+   314 00000057 E8(F6FFFFFF)            call characterToNumber
+   315 0000005C 4883F83F                cmp rax, 63
+   316 00000060 741C                    je .tctn3
+   317 00000062 48C7C7[00000000]        mov rdi, testFailMsg
+   318 00000069 4C89E6                  mov rsi, r12
+   319 0000006C 4831C0                  xor rax, rax
+   320 0000006F E8(F6FFFFFF)            call printf
+   321 00000074 48C7C701000000          mov rdi, 1
+   322 0000007B E85C080000              call _exit
+   323                                 
+   324                                 .tctn3:
+   325 00000080 49FFC4                  inc r12
+   326 00000083 48C7C730000000          mov rdi, 0x30
+   327 0000008A E8(F6FFFFFF)            call characterToNumber
+   328 0000008F 4883F810                cmp rax, 16
+   329 00000093 741C                    je .tctn4
+   330 00000095 48C7C7[00000000]        mov rdi, testFailMsg
+   331 0000009C 4C89E6                  mov rsi, r12
+   332 0000009F 4831C0                  xor rax, rax
+   333 000000A2 E8(F6FFFFFF)            call printf
+   334 000000A7 48C7C701000000          mov rdi, 1
+   335 000000AE E829080000              call _exit
+   336                                 
+   337                                 .tctn4:
+   338 000000B3 49FFC4                  inc r12
+   339 000000B6 48C7C77C000000          mov rdi, 0x7c
+   340 000000BD E8(F6FFFFFF)            call characterToNumber
+   341 000000C2 4883F800                cmp rax, 0
+   342 000000C6 741C                    je .tctn5
+   343 000000C8 48C7C7[00000000]        mov rdi, testFailMsg
+   344 000000CF 4C89E6                  mov rsi, r12
+   345 000000D2 4831C0                  xor rax, rax
+   346 000000D5 E8(F6FFFFFF)            call printf
+   347 000000DA 48C7C701000000          mov rdi, 1
+   348 000000E1 E8F6070000              call _exit
+   349                                 
+   350                                 .tctn5:
+   351                                 .tctnret:
+   352                                 
+   353 000000E6 48C7C7[00000000]        mov rdi, testOkMsg
+   354 000000ED 31C0                    xor eax, eax
+   355 000000EF E8(F6FFFFFF)            call printf
+   356                                 
+   357 000000F4 C3                      ret
+   358                                 
+   359                                 [global _testNumberToCharacter]
+   360                                 _testNumberToCharacter:
+   361                                 
+   362 000000F5 49C7C401000000          mov r12, 1
+   363 000000FC 48C7C7[00000000]        mov rdi, testingMsg
+   364 00000103 48C7C6[00000000]        mov rsi, mNumToChar
+   365 0000010A 4831C0                  xor rax, rax
+   366 0000010D E8(F6FFFFFF)            call printf
+   367                                 
+   368                                 .tntc1:
+   369 00000112 48C7C700000000          mov rdi, 0
+   370 00000119 E8(F6FFFFFF)            call numberToCharacter
+   371 0000011E 49C7C320000000          mov r11, 0x20
+   372 00000125 4C39D8                  cmp rax, r11
+   373 00000128 741C                    je .tntc2
+   374 0000012A 48C7C7[00000000]        mov rdi, testFailMsg
+   375 00000131 4C89E6                  mov rsi, r12
+   376 00000134 4831C0                  xor rax, rax
+   377 00000137 E8(F6FFFFFF)            call printf
+   378 0000013C 48C7C701000000          mov rdi, 1
+   379 00000143 E894070000              call _exit
+   380                                 
+   381                                 .tntc2:
+   382 00000148 49FFC4                  inc r12
+   383 0000014B 48C7C73B000000          mov rdi, 59
+   384 00000152 E8(F6FFFFFF)            call numberToCharacter
+   385 00000157 49C7C361000000          mov r11, 0x61
+   386 0000015E 4C39D8                  cmp rax, r11
+   387 00000161 741C                    je .tntc3
+   388 00000163 48C7C7[00000000]        mov rdi, testFailMsg
+   389 0000016A 4C89E6                  mov rsi, r12
+   390 0000016D 4831C0                  xor rax, rax
+   391 00000170 E8(F6FFFFFF)            call printf
+   392 00000175 48C7C701000000          mov rdi, 1
+   393 0000017C E85B070000              call _exit
+   394                                 
+   395                                 .tntc3:
+   396 00000181 49FFC4                  inc r12
+   397 00000184 48C7C754000000          mov rdi, 84
+   398 0000018B E8(F6FFFFFF)            call numberToCharacter
+   399 00000190 49C7C37A000000          mov r11, 0x7a
+   400 00000197 4C39D8                  cmp rax, r11
+   401 0000019A 741C                    je .tntc4
+   402 0000019C 48C7C7[00000000]        mov rdi, testFailMsg
+   403 000001A3 4C89E6                  mov rsi, r12
+   404 000001A6 4831C0                  xor rax, rax
+   405 000001A9 E8(F6FFFFFF)            call printf
+   406 000001AE 48C7C701000000          mov rdi, 1
+   407 000001B5 E822070000              call _exit
+   408                                 
+   409                                 .tntc4:
+   410 000001BA 49FFC4                  inc r12
+   411 000001BD 48C7C739000000          mov rdi, 57
+   412 000001C4 E8(F6FFFFFF)            call numberToCharacter
+   413 000001C9 49C7C35C000000          mov r11, 0x5c
+   414 000001D0 4C39D8                  cmp rax, r11
+   415 000001D3 741C                    je .tntc5
+   416 000001D5 48C7C7[00000000]        mov rdi, testFailMsg
+   417 000001DC 4C89E6                  mov rsi, r12
+   418 000001DF 4831C0                  xor rax, rax
+   419 000001E2 E8(F6FFFFFF)            call printf
+   420 000001E7 48C7C701000000          mov rdi, 1
+   421 000001EE E8E9060000              call _exit
+   422                                 
+   423                                 .tntc5:
+   424 000001F3 48C7C7[00000000]        mov rdi, testOkMsg
+   425 000001FA 31C0                    xor eax, eax
+   426 000001FC E8(F6FFFFFF)            call printf
+   427                                 
+   428 00000201 C3                      ret
+   429                                 
+   430                                 [global _testOurStrtol]
+   431                                 _testOurStrtol:
+   432                                 
+   433 00000202 49C7C401000000          mov r12, 1
+   434 00000209 48C7C7[00000000]        mov rdi, testingMsg
+   435 00000210 48C7C6[00000000]        mov rsi, mOurStrtol
+   436 00000217 4831C0                  xor rax, rax
+   437 0000021A E8(F6FFFFFF)            call printf
+   438                                 
+   439                                 .tostl1:
+   440 0000021F 48C7C7[00000000]        mov rdi, strtolT1
+   441 00000226 E8(F6FFFFFF)            call _strtol
+   442 0000022B 488B3C25[00000000]      mov rdi, [strtolTR1]
+   443                                 
+   444                                 
+   445 00000233 4839F8                  cmp rax, rdi
+   446 00000236 741C                    je .tostl2
+   447 00000238 48C7C7[00000000]        mov rdi, testFailMsg
+   448 0000023F 4C89E6                  mov rsi, r12
+   449 00000242 4831C0                  xor rax, rax
+   450 00000245 E8(F6FFFFFF)            call printf
+   451 0000024A 48C7C701000000          mov rdi, 1
+   452 00000251 E886060000              call _exit
+   453                                 
+   454                                 .tostl2:
+   455 00000256 4983C401                add r12, 1
+   456 0000025A 48C7C7[00000000]        mov rdi, strtolT2
+   457 00000261 E8(F6FFFFFF)            call _strtol
+   458 00000266 488B3C25[00000000]      mov rdi, [strtolTR2]
+   459                                 
+   460                                 
+   461 0000026E 4839F8                  cmp rax, rdi
+   462 00000271 741C                    je .tostl3
+   463 00000273 48C7C7[00000000]        mov rdi, testFailMsg
+   464 0000027A 4C89E6                  mov rsi, r12
+   465 0000027D 4831C0                  xor rax, rax
+   466 00000280 E8(F6FFFFFF)            call printf
+   467 00000285 48C7C701000000          mov rdi, 1
+   468 0000028C E84B060000              call _exit
+   469                                 
+   470                                 .tostl3:
+   471 00000291 4983C401                add r12, 1
+   472 00000295 48C7C7[00000000]        mov rdi, strtolT3
+   473 0000029C E8(F6FFFFFF)            call _strtol
+   474 000002A1 488B3C25[00000000]      mov rdi, [strtolTR3]
+   475                                 
+   476                                 
+   477 000002A9 4839F8                  cmp rax, rdi
+   478 000002AC 741C                    je .tostl4
+   479 000002AE 48C7C7[00000000]        mov rdi, testFailMsg
+   480 000002B5 4C89E6                  mov rsi, r12
+   481 000002B8 4831C0                  xor rax, rax
+   482 000002BB E8(F6FFFFFF)            call printf
+   483 000002C0 48C7C701000000          mov rdi, 1
+   484 000002C7 E810060000              call _exit
+   485                                 
+   486                                 .tostl4:
+   487 000002CC 4983C401                add r12, 1
+   488 000002D0 48C7C7[00000000]        mov rdi, strtolT4
+   489 000002D7 E8(F6FFFFFF)            call _strtol
+   490 000002DC 488B3C25[00000000]      mov rdi, [strtolTR4]
+   491                                 
+   492                                 
+   493 000002E4 4839F8                  cmp rax, rdi
+   494 000002E7 741C                    je .tostl5
+   495 000002E9 48C7C7[00000000]        mov rdi, testFailMsg
+   496 000002F0 4C89E6                  mov rsi, r12
+   497 000002F3 4831C0                  xor rax, rax
+   498 000002F6 E8(F6FFFFFF)            call printf
+   499 000002FB 48C7C701000000          mov rdi, 1
+   500 00000302 E8D5050000              call _exit
+   501                                 
+   502                                 .tostl5:
+   503 00000307 4983C401                add r12, 1
+   504 0000030B 48C7C7[00000000]        mov rdi, strtolT5
+   505 00000312 E8(F6FFFFFF)            call _strtol
+   506 00000317 488B3C25[00000000]      mov rdi, [strtolTR5]
+   507                                 
+   508                                 
+   509 0000031F 4839F8                  cmp rax, rdi
+   510 00000322 741C                    je .tostl6
+   511 00000324 48C7C7[00000000]        mov rdi, testFailMsg
+   512 0000032B 4C89E6                  mov rsi, r12
+   513 0000032E 4831C0                  xor rax, rax
+   514 00000331 E8(F6FFFFFF)            call printf
+   515 00000336 48C7C701000000          mov rdi, 1
+   516 0000033D E89A050000              call _exit
+   517                                 
+   518                                 .tostl6:
+   519 00000342 4983C401                add r12, 1
+   520 00000346 48C7C7[00000000]        mov rdi, strtolT6
+   521 0000034D E8(F6FFFFFF)            call _strtol
+   522 00000352 488B3C25[00000000]      mov rdi, [strtolTR6]
+   523                                 
+   524                                 
+   525 0000035A 4839F8                  cmp rax, rdi
+   526 0000035D 741C                    je .tostl7
+   527 0000035F 48C7C7[00000000]        mov rdi, testFailMsg
+   528 00000366 4C89E6                  mov rsi, r12
+   529 00000369 4831C0                  xor rax, rax
+   530 0000036C E8(F6FFFFFF)            call printf
+   531 00000371 48C7C701000000          mov rdi, 1
+   532 00000378 E85F050000              call _exit
+   533                                 
+   534                                 .tostl7:
+   535                                 
+   536 0000037D 48C7C7[00000000]        mov rdi, testOkMsg
+   537 00000384 31C0                    xor eax, eax
+   538 00000386 E8(F6FFFFFF)            call printf
+   539                                 
+   540 0000038B C3                      ret
+   541                                 
+   542                                 [global _testRandBytes]
+   543                                 _testRandBytes:
+   544                                 
+   545 0000038C 55                      push rbp
+   546 0000038D 4889E5                  mov rbp, rsp
+   547 00000390 4883EC10                sub rsp, 16
+   548                                 
+   549 00000394 48C7C7[00000000]        mov rdi, testingMsg
+   550 0000039B 48C7C6[00000000]        mov rsi, mRandBytes
+   551 000003A2 4831C0                  xor rax, rax
+   552 000003A5 E8(F6FFFFFF)            call printf
+   553                                 
+   554 000003AA 48C7C780000000          mov rdi, 128
+   555 000003B1 E8(F6FFFFFF)            call malloc
+   556 000003B6 488945F8                mov [rbp-8], rax
+   557 000003BA 48837DF800              cmp qword [rbp-8], 0
+   558 000003BF 7519                    jne getRandBytes
+   559 000003C1 48C7C7[00000000]        mov rdi, mMallocFailed
+   560 000003C8 4831C0                  xor rax, rax
+   561 000003CB E8(F6FFFFFF)            call printf
+   562 000003D0 48C7C701000000          mov rdi, 1
+   563 000003D7 E800050000              call _exit
+   564                                 getRandBytes:
+   565 000003DC 488B7DF8                mov rdi, qword [rbp-8]
+   566 000003E0 48C7C680000000          mov rsi, 128
+   567 000003E7 E8(F6FFFFFF)            call RAND_bytes
+   568 000003EC 488B75F8                mov rsi, [rbp-8]
+   569 000003F0 48C7C280000000          mov rdx, 128
+   570 000003F7 E8(F6FFFFFF)            call printByteArray
+   571                                 
+   572 000003FC 48C7C7[00000000]        mov rdi, testOkMsg
+   573 00000403 31C0                    xor eax, eax
+   574 00000405 E8(F6FFFFFF)            call printf
+   575                                 
+   576 0000040A 488B7DF8                mov rdi, [rbp-8]
+   577 0000040E E8(F6FFFFFF)            call free
+   578                                 
+   579 00000413 4889EC                  mov rsp, rbp
+   580 00000416 5D                      pop rbp
+   581 00000417 C3                      ret
+   582                                 
+   583                                 
+   584                                 [global _testCreatePadPage]
+   585                                 _testCreatePadPage:
+   586                                 
+   587 00000418 55                      push rbp
+   588 00000419 4889E5                  mov rbp, rsp
+   589 0000041C 4883EC30                sub rsp, 48
+   590                                 
+   591 00000420 49C7C401000000          mov r12, 1
+   592 00000427 48C7C7[00000000]        mov rdi, testingMsg
+   593 0000042E 48C7C6[00000000]        mov rsi, mCreatePadPage
+   594 00000435 4831C0                  xor rax, rax
+   595 00000438 E8(F6FFFFFF)            call printf
+   596                                 
+   597 0000043D 57                      push rdi
+   598                                 %line 411+0 tests/test.asm
+   599 0000043E 488B3C25[00000000]      mov rdi, [stdout]
+   600 00000446 E8(F6FFFFFF)            call fflush
+   601 0000044B 5F                      pop rdi
+   602                                 %line 412+1 tests/test.asm
+   603 0000044C E8(F6FFFFFF)            call printEndl
+   604                                 
+   605                                 
+   606 00000451 48C7C77D000000          mov rdi, 125
+   607 00000458 E8(F6FFFFFF)            call createPadPage
+   608 0000045D 488945F8                mov [rbp-8], rax
+   609                                 
+   610 00000461 48C7C7[00000000]        mov rdi, mPageEqualsMsg
+   611 00000468 488B75F8                mov rsi, [rbp-8]
+   612 0000046C 4831C0                  xor rax, rax
+   613 0000046F E8(F6FFFFFF)            call printf
+   614                                 
+   615 00000474 488B7DF8                mov rdi, [rbp-8]
+   616 00000478 E8(F6FFFFFF)            call free
+   617                                 
+   618                                 
+   619 0000047D 48C7C7FA000000          mov rdi, 250
+   620 00000484 E8(F6FFFFFF)            call createPadPage
+   621 00000489 488945F8                mov [rbp-8], rax
+   622                                 
+   623 0000048D 48C7C7[00000000]        mov rdi, mPageEqualsMsg
+   624 00000494 488B75F8                mov rsi, [rbp-8]
+   625 00000498 4831C0                  xor rax, rax
+   626 0000049B E8(F6FFFFFF)            call printf
+   627                                 
+   628 000004A0 488B7DF8                mov rdi, [rbp-8]
+   629 000004A4 E8(F6FFFFFF)            call free
+   630                                 
+   631 000004A9 57                      push rdi
+   632                                 %line 440+0 tests/test.asm
+   633 000004AA 488B3C25[00000000]      mov rdi, [stdout]
+   634 000004B2 E8(F6FFFFFF)            call fflush
+   635 000004B7 5F                      pop rdi
+   636                                 %line 441+1 tests/test.asm
+   637                                 
+   638                                 .tcppret:
+   639 000004B8 48C7C7[00000000]        mov rdi, testOkMsg
+   640 000004BF 31C0                    xor eax, eax
+   641 000004C1 E8(F6FFFFFF)            call printf
+   642                                 
+   643 000004C6 4889EC                  mov rsp, rbp
+   644 000004C9 5D                      pop rbp
+   645 000004CA C3                      ret
+   646                                 
+   647                                 [global _testCreatePadPageEncryptAndDecrypt]
+   648                                 _testCreatePadPageEncryptAndDecrypt:
+   649                                 
+   650 000004CB 55                      push rbp
+   651 000004CC 4889E5                  mov rbp, rsp
+   652 000004CF 4883EC30                sub rsp, 48
+   653                                 
+   654 000004D3 48C7C7[00000000]        mov rdi, testingMsg
+   655 000004DA 48C7C6[00000000]        mov rsi, mCreatePageED
+   656 000004E1 4831C0                  xor rax, rax
+   657 000004E4 E8(F6FFFFFF)            call printf
+   658                                 
+   659 000004E9 48C7C77D000000          mov rdi, 125
+   660 000004F0 E8(F6FFFFFF)            call createPadPage
+   661 000004F5 488945F8                mov [rbp-8], rax
+   662 000004F9 48837DF800              cmp qword [rbp-8], 0
+   663 000004FE 750A                    jne .tCPPED1
+   664 00000500 48C7C701000000          mov rdi, 1
+   665 00000507 E8D0030000              call _exit
+   666                                 
+   667                                 .tCPPED1:
+   668 0000050C 57                      push rdi
+   669                                 %line 472+0 tests/test.asm
+   670 0000050D 488B3C25[00000000]      mov rdi, [stdout]
+   671 00000515 E8(F6FFFFFF)            call fflush
+   672 0000051A 5F                      pop rdi
+   673                                 %line 473+1 tests/test.asm
+   674 0000051B E8(F6FFFFFF)            call printEndl
+   675                                 
+   676 00000520 48C7C7[00000000]        mov rdi, mPageEqualsMsg
+   677 00000527 488B75F8                mov rsi, [rbp-8]
+   678 0000052B 4831C0                  xor rax, rax
+   679 0000052E E8(F6FFFFFF)            call printf
+   680                                 
+   681 00000533 48C7C7[00000000]        mov rdi, mEncryptingMsg
+   682 0000053A 4831C0                  xor rax, rax
+   683 0000053D E8(F6FFFFFF)            call printf
+   684                                 
+   685 00000542 48C7C7[00000000]        mov rdi, testMsg1
+   686 00000549 488B75F8                mov rsi, [rbp-8]
+   687 0000054D E8(F6FFFFFF)            call encryptMessageWithPad
+   688 00000552 488945F0                mov [rbp-16], rax
+   689 00000556 48837DF000              cmp qword [rbp-16], 0
+   690 0000055B 750A                    jne .tCPPED2
+   691 0000055D 48C7C701000000          mov rdi, 1
+   692 00000564 E873030000              call _exit
+   693                                 
+   694                                 .tCPPED2:
+   695 00000569 48C7C7[00000000]        mov rdi, mResultMsg
+   696 00000570 488B75F0                mov rsi, [rbp-16]
+   697 00000574 4831C0                  xor rax, rax
+   698 00000577 E8(F6FFFFFF)            call printf
+   699                                 
+   700 0000057C 48C7C7[00000000]        mov rdi, mDecryptingMsg
+   701 00000583 4831C0                  xor rax, rax
+   702 00000586 E8(F6FFFFFF)            call printf
+   703                                 
+   704 0000058B 488B7DF0                mov rdi, [rbp-16]
+   705 0000058F 488B75F8                mov rsi, [rbp-8]
+   706 00000593 E8(F6FFFFFF)            call decryptMessageWithPad
+   707 00000598 488945E0                mov [rbp-32], rax
+   708 0000059C 48837DE000              cmp qword [rbp-32], 0
+   709 000005A1 750A                    jne .tCPPED3
+   710 000005A3 48C7C701000000          mov rdi, 1
+   711 000005AA E82D030000              call _exit
+   712                                 
+   713                                 .tCPPED3:
+   714 000005AF 48C7C7[00000000]        mov rdi, mResultMsg
+   715 000005B6 488B75E0                mov rsi, [rbp-32]
+   716 000005BA 4831C0                  xor rax, rax
+   717 000005BD E8(F6FFFFFF)            call printf
+   718                                 
+   719                                 
+   720 000005C2 488B7DE0                mov rdi, [rbp-32]
+   721 000005C6 48C7C6[00000000]        mov rsi, testMsg1
+   722 000005CD E8(F6FFFFFF)            call strcmp
+   723 000005D2 4883F800                cmp rax, 0
+   724 000005D6 7420                    je .tCPPEDSuccess
+   725 000005D8 48C7C7[00000000]        mov rdi, mResultMsg
+   726 000005DF 48C7C6[00000000]        mov rsi, mFailMsg
+   727 000005E6 4831C0                  xor rax, rax
+   728 000005E9 E8(F6FFFFFF)            call printf
+   729 000005EE 48C7C701000000          mov rdi, 1
+   730 000005F5 E8E2020000              call _exit
+   731                                 
+   732                                 .tCPPEDSuccess:
+   733                                 
+   734 000005FA 48C7C7[00000000]        mov rdi, testOkMsg
+   735 00000601 4831C0                  xor rax, rax
+   736 00000604 E8(F6FFFFFF)            call printf
+   737                                 
+   738                                 
+   739                                 
+   740 00000609 4889EC                  mov rsp, rbp
+   741 0000060C 5D                      pop rbp
+   742 0000060D C3                      ret
+   743                                 
+   744                                 [global _testEncryptMessageWithPad]
+   745                                 _testEncryptMessageWithPad:
+   746                                 
+   747 0000060E 55                      push rbp
+   748 0000060F 4889E5                  mov rbp, rsp
+   749 00000612 4883EC08                sub rsp, 8
+   750 00000616 4154                    push r12
+   751                                 
+   752 00000618 48C7C7[00000000]        mov rdi, testingMsg
+   753 0000061F 48C7C6[00000000]        mov rsi, mEncryptMsg
+   754 00000626 4831C0                  xor rax, rax
+   755 00000629 E8(F6FFFFFF)            call printf
+   756                                 
+   757 0000062E 57                      push rdi
+   758                                 %line 556+0 tests/test.asm
+   759 0000062F 488B3C25[00000000]      mov rdi, [stdout]
+   760 00000637 E8(F6FFFFFF)            call fflush
+   761 0000063C 5F                      pop rdi
+   762                                 %line 557+1 tests/test.asm
+   763                                 
+   764                                 
+   765 0000063D 49C7C401000000          mov r12, 1
+   766 00000644 48C7C7[00000000]        mov rdi, testMsg1
+   767 0000064B 48C7C6[00000000]        mov rsi, testKey1
+   768 00000652 E8(F6FFFFFF)            call encryptMessageWithPad
+   769 00000657 488945F8                mov qword [rbp-8], rax
+   770                                 
+   771 0000065B 48C7C7[00000000]        mov rdi, mResultMsg
+   772 00000662 488B75F8                mov rsi, qword [rbp-8]
+   773 00000666 4831C0                  xor rax, rax
+   774 00000669 E8(F6FFFFFF)            call printf
+   775                                 
+   776 0000066E 488B7DF8                mov rdi, qword [rbp-8]
+   777 00000672 48C7C6[00000000]        mov rsi, testCT1
+   778 00000679 E8(F6FFFFFF)            call strcmp
+   779 0000067E 4883F800                cmp rax, 0
+   780 00000682 741C                    je .tEMWPOk
+   781 00000684 48C7C7[00000000]        mov rdi, testFailMsg
+   782 0000068B 4C89E6                  mov rsi, r12
+   783 0000068E 4831C0                  xor rax, rax
+   784 00000691 E8(F6FFFFFF)            call printf
+   785 00000696 48C7C701000000          mov rdi, 1
+   786 0000069D E83A020000              call _exit
+   787                                 
+   788                                 .tEMWPOk:
+   789 000006A2 48C7C7[00000000]        mov rdi, testOkMsg
+   790 000006A9 31C0                    xor eax, eax
+   791 000006AB E8(F6FFFFFF)            call printf
+   792                                 
+   793 000006B0 415C                    pop r12
+   794 000006B2 4889EC                  mov rsp, rbp
+   795 000006B5 5D                      pop rbp
+   796 000006B6 C3                      ret
+   797                                 
+   798                                 [global _testDecryptMessageWithPad]
+   799                                 _testDecryptMessageWithPad:
+   800                                 
+   801 000006B7 55                      push rbp
+   802 000006B8 4889E5                  mov rbp, rsp
+   803 000006BB 4883EC08                sub rsp, 8
+   804 000006BF 4154                    push r12
+   805                                 
+   806 000006C1 48C7C7[00000000]        mov rdi, testingMsg
+   807 000006C8 48C7C6[00000000]        mov rsi, mDecryptMsg
+   808 000006CF 4831C0                  xor rax, rax
+   809 000006D2 E8(F6FFFFFF)            call printf
+   810                                 
+   811 000006D7 57                      push rdi
+   812                                 %line 605+0 tests/test.asm
+   813 000006D8 488B3C25[00000000]      mov rdi, [stdout]
+   814 000006E0 E8(F6FFFFFF)            call fflush
+   815 000006E5 5F                      pop rdi
+   816                                 %line 606+1 tests/test.asm
+   817 000006E6 E8(F6FFFFFF)            call printEndl
+   818                                 
+   819                                 
+   820 000006EB 49C7C401000000          mov r12, 1
+   821 000006F2 48C7C7[00000000]        mov rdi, testCT1
+   822 000006F9 48C7C6[00000000]        mov rsi, testKey1
+   823 00000700 E8(F6FFFFFF)            call decryptMessageWithPad
+   824 00000705 488945F8                mov qword [rbp-8], rax
+   825                                 
+   826                                 
+   827 00000709 48C7C7[00000000]        mov rdi, mDecryptTestRes
+   828 00000710 4C89E6                  mov rsi, r12
+   829 00000713 48C7C2[00000000]        mov rdx, testCT1
+   830 0000071A 488B4DF8                mov rcx, qword [rbp-8]
+   831 0000071E 49C7C0[00000000]        mov r8, testMsg1
+   832 00000725 4831C0                  xor rax, rax
+   833 00000728 E8(F6FFFFFF)            call printf
+   834                                 
+   835                                 
+   836 0000072D 488B7DF8                mov rdi, qword [rbp-8]
+   837 00000731 48C7C6[00000000]        mov rsi, testMsg1
+   838 00000738 E8(F6FFFFFF)            call strcmp
+   839 0000073D 4883F800                cmp rax, 0
+   840 00000741 7507                    jne .tDMWP1Fail
+   841 00000743 48C7C6[00000000]        mov rsi, mPassMsg
+   842 0000074A EB05                    jmp .tDMWP1PrintRes
+   843                                 .tDMWP1Fail:
+   844 0000074C 48C7C6[00000000]        mov rsi, mFailMsg
+   845                                 .tDMWP1PrintRes:
+   846 00000753 48C7C7[00000000]        mov rdi, mResultMsg
+   847 0000075A 4831C0                  xor rax, rax
+   848 0000075D E8(F6FFFFFF)            call printf
+   849                                 
+   850                                 .tDMWP2:
+   851                                 
+   852                                 
+   853 00000762 4983C401                add r12, 1
+   854 00000766 48C7C7[00000000]        mov rdi, testCT2
+   855 0000076D 48C7C6[00000000]        mov rsi, testKey2
+   856 00000774 E8(F6FFFFFF)            call decryptMessageWithPad
+   857 00000779 488945F8                mov qword [rbp-8], rax
+   858                                 
+   859                                 
+   860 0000077D 48C7C7[00000000]        mov rdi, mDecryptTestRes
+   861 00000784 4C89E6                  mov rsi, r12
+   862 00000787 48C7C2[00000000]        mov rdx, testCT2
+   863 0000078E 488B4DF8                mov rcx, qword [rbp-8]
+   864 00000792 49C7C0[00000000]        mov r8, testMsg2
+   865 00000799 4831C0                  xor rax, rax
+   866 0000079C E8(F6FFFFFF)            call printf
+   867                                 
+   868                                 
+   869 000007A1 488B7DF8                mov rdi, qword [rbp-8]
+   870 000007A5 48C7C6[00000000]        mov rsi, testMsg2
+   871 000007AC E8(F6FFFFFF)            call strcmp
+   872 000007B1 4883F800                cmp rax, 0
+   873 000007B5 7507                    jne .tDMWP2Fail
+   874 000007B7 48C7C6[00000000]        mov rsi, mPassMsg
+   875 000007BE EB05                    jmp .tDMWP2PrintRes
+   876                                 .tDMWP2Fail:
+   877 000007C0 48C7C6[00000000]        mov rsi, mFailMsg
+   878                                 .tDMWP2PrintRes:
+   879 000007C7 48C7C7[00000000]        mov rdi, mResultMsg
+   880 000007CE 4831C0                  xor rax, rax
+   881 000007D1 E8(F6FFFFFF)            call printf
+   882                                 
+   883                                 .tDMWP3:
+   884                                 
+   885                                 
+   886 000007D6 4983C401                add r12, 1
+   887 000007DA 48C7C7[00000000]        mov rdi, testCT3
+   888 000007E1 48C7C6[00000000]        mov rsi, testKey3
+   889 000007E8 E8(F6FFFFFF)            call decryptMessageWithPad
+   890 000007ED 488945F8                mov qword [rbp-8], rax
+   891                                 
+   892                                 
+   893 000007F1 48C7C7[00000000]        mov rdi, mDecryptTestRes
+   894 000007F8 4C89E6                  mov rsi, r12
+   895 000007FB 48C7C2[00000000]        mov rdx, testCT3
+   896 00000802 488B4DF8                mov rcx, qword [rbp-8]
+   897 00000806 49C7C0[00000000]        mov r8, testMsg3
+   898 0000080D 4831C0                  xor rax, rax
+   899 00000810 E8(F6FFFFFF)            call printf
+   900                                 
+   901                                 
+   902 00000815 488B7DF8                mov rdi, qword [rbp-8]
+   903 00000819 48C7C6[00000000]        mov rsi, testMsg3
+   904 00000820 E8(F6FFFFFF)            call strcmp
+   905 00000825 4883F800                cmp rax, 0
+   906 00000829 7507                    jne .tDMWP3Fail
+   907 0000082B 48C7C6[00000000]        mov rsi, mPassMsg
+   908 00000832 EB05                    jmp .tDMWP3PrintRes
+   909                                 .tDMWP3Fail:
+   910 00000834 48C7C6[00000000]        mov rsi, mFailMsg
+   911                                 .tDMWP3PrintRes:
+   912 0000083B 48C7C7[00000000]        mov rdi, mResultMsg
+   913 00000842 4831C0                  xor rax, rax
+   914 00000845 E8(F6FFFFFF)            call printf
+   915                                 
+   916                                 .tDMWP4:
+   917 0000084A 48C7C7[00000000]        mov rdi, testOkMsg
+   918 00000851 31C0                    xor eax, eax
+   919 00000853 E8(F6FFFFFF)            call printf
+   920                                 
+   921 00000858 415C                    pop r12
+   922 0000085A 4889EC                  mov rsp, rbp
+   923 0000085D 5D                      pop rbp
+   924 0000085E C3                      ret
+   925                                 
+   926                                 
+   927                                 
+   928                                 [global _start]
+   929                                 _start:
+   930                                 
+   931 0000085F E897F7FFFF              call _testCharacterToNumber
+   932 00000864 E887F8FFFF              call _testNumberToCharacter
+   933 00000869 E88FF9FFFF              call _testOurStrtol
+   934 0000086E E814FBFFFF              call _testRandBytes
+   935 00000873 E891FDFFFF              call _testEncryptMessageWithPad
+   936 00000878 E835FEFFFF              call _testDecryptMessageWithPad
+   937 0000087D E891FBFFFF              call _testCreatePadPage
+   938 00000882 E83FFCFFFF              call _testCreatePadPageEncryptAndDecrypt
+   939                                 
+   940 00000887 55                      push rbp
+   941 00000888 4889E5                  mov rbp, rsp
+   942 0000088B 4883ED20                sub rbp, 32
+   943                                 
+   944                                 
+   945 0000088F 48C7C780000000          mov rdi, 128
+   946 00000896 E8(F6FFFFFF)            call malloc
+   947 0000089B 488945F8                mov qword [rbp-8], rax
+   948                                 
+   949 0000089F 48837DF800              cmp qword [rbp-8], 0
+   950 000008A4 750A                    jne jfiowfjeiwo
+   951 000008A6 48C7C702000000          mov rdi, 2
+   952 000008AD E82A000000              call _exit
+   953                                 
+   954                                 jfiowfjeiwo:
+   955                                 
+   956 000008B2 488B45F8                mov rax, qword [rbp-8]
+   957 000008B6 C60078                  mov byte [rax], 120
+   958                                 
+   959 000008B9 4889C7                  mov rdi, rax
+   960 000008BC E8(F6FFFFFF)            call free
+   961                                 
+   962                                 
+   963 000008C1 48C7C7[00000000]        mov rdi, allTestsOkMsg
+   964 000008C8 4831C0                  xor rax, rax
+   965 000008CB E8(F6FFFFFF)            call printf
+   966                                 
+   967 000008D0 48C7C700000000          mov rdi, 0
+   968 000008D7 E800000000              call _exit
+   969                                 
+   970 000008DC 4889EC                  mov rsp, rbp
+   971 000008DF 5D                      pop rbp
+   972                                 
+   973 000008E0 C3                      ret
+   974                                 
+   975                                 [global _exit]
+   976                                 _exit:
+   977 000008E1 48C7C03C000000          mov rax, 60
+   978 000008E8 0F05                    syscall
